@@ -1,0 +1,5 @@
+*.json
+*.xlsx
+example/
+example/*.json
+example/*.xlsx

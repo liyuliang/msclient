@@ -2,6 +2,7 @@ package msclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"golang.org/x/oauth2"
 	"net/http"
@@ -52,4 +53,14 @@ func (t *token) HttpClient(ctx context.Context) (*http.Client, error) {
 	}
 	source := t.oauthConfig.TokenSource(ctx, accessToken)
 	return oauth2.NewClient(ctx, source), nil
+}
+
+func (t *token) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		OAuth       *oauth2.Token  `json:"Token"`
+		OAuthConfig *oauth2.Config `json:"OAuthConfig"`
+	}{
+		OAuth:       t.oauth,
+		OAuthConfig: t.oauthConfig,
+	})
 }

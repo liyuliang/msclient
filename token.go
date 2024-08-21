@@ -19,6 +19,11 @@ type token struct {
 	oauthConfig *oauth2.Config
 }
 
+type tokenTpl struct {
+	OAuth       *oauth2.Token  `json:"Token"`
+	OAuthConfig *oauth2.Config `json:"OAuthConfig"`
+}
+
 func (t *token) refresh(ctx context.Context) (*oauth2.Token, error) {
 	if t.oauth.Valid() {
 		return t.oauth, nil
@@ -56,11 +61,9 @@ func (t *token) HttpClient(ctx context.Context) (*http.Client, error) {
 }
 
 func (t *token) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		OAuth       *oauth2.Token  `json:"Token"`
-		OAuthConfig *oauth2.Config `json:"OAuthConfig"`
-	}{
+	tpl := tokenTpl{
 		OAuth:       t.oauth,
 		OAuthConfig: t.oauthConfig,
-	})
+	}
+	return json.Marshal(&tpl)
 }

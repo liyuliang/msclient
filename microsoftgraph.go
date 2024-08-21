@@ -10,30 +10,23 @@ import (
 	"golang.org/x/oauth2/microsoft"
 )
 
-type MicrosoftGraph interface {
-	AuthUrl(ctx context.Context, scopes ...string) (string, error)
-	AuthUrlCallback(ctx context.Context, code string) (Token, error)
-	MyMailBox(token Token, mailProperties ...string) MailBox
-	MySharePoint(token Token) SharePoint
-}
-
 const (
-	authHost     = "https://login.microsoftonline.com/"
-	graphAPIHost = "https://graph.microsoft.com"
+	AuthHost     = "https://login.microsoftonline.com/"
+	GraphAPIHost = "https://graph.microsoft.com"
 )
 
 const (
-	defaultMicrosoftGraphScope = "https://graph.microsoft.com/.default"
+	DefaultMicrosoftGraphScope = "https://graph.microsoft.com/.default"
 )
 
-func NewMicrosoftGraph(conf Config) (MicrosoftGraph, error) {
+func NewMicrosoftGraph(conf Config) (*MicrosoftGraph, error) {
 	oauthConf := &oauth2.Config{
 		ClientID:     conf.ClientId,
 		ClientSecret: conf.ClientSecret,
 		RedirectURL:  conf.RedirectURL,
 		Endpoint:     microsoft.AzureADEndpoint(conf.TenantId),
 		Scopes: []string{
-			defaultMicrosoftGraphScope,
+			DefaultMicrosoftGraphScope,
 		},
 	}
 
@@ -42,18 +35,18 @@ func NewMicrosoftGraph(conf Config) (MicrosoftGraph, error) {
 		return nil, fmt.Errorf("could not create microsoft cred: %v", err)
 	}
 
-	app, err := confidential.New(fmt.Sprintf("%s%s", authHost, conf.TenantId), conf.ClientId, msCred)
+	app, err := confidential.New(fmt.Sprintf("%s%s", AuthHost, conf.TenantId), conf.ClientId, msCred)
 	if err != nil {
 		return nil, fmt.Errorf("could not create microsoft confidential client: %v", err)
 	}
-	return &microsoftGraph{
+	return &MicrosoftGraph{
 		conf:      conf,
 		oauthConf: oauthConf,
 		app:       app,
 	}, nil
 }
 
-type microsoftGraph struct {
+type MicrosoftGraph struct {
 	conf      Config
 	oauthConf *oauth2.Config
 	app       confidential.Client
@@ -75,7 +68,7 @@ func microsoftGraphClient(ctx context.Context, token Token) (*msgraphsdk.GraphSe
 	return msgraphsdk.NewGraphServiceClient(adapter), nil
 }
 
-func (c *microsoftGraph) AuthUrl(ctx context.Context, scopes ...string) (string, error) {
+func (c *MicrosoftGraph) AuthUrl(ctx context.Context, scopes ...string) (string, error) {
 	u, err := c.app.AuthCodeURL(ctx, c.conf.ClientId, c.conf.RedirectURL, scopes)
 	if err != nil {
 		return "", fmt.Errorf("could not create auth code url: %v", err)
@@ -83,7 +76,7 @@ func (c *microsoftGraph) AuthUrl(ctx context.Context, scopes ...string) (string,
 	return u, nil
 }
 
-func (c *microsoftGraph) AuthUrlCallback(ctx context.Context, code string) (Token, error) {
+func (c *MicrosoftGraph) AuthUrlCallback(ctx context.Context, code string) (Token, error) {
 	// 使用授权码交换访问令牌
 	tk, err := c.oauthConf.Exchange(ctx, code)
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	graphusers "github.com/microsoftgraph/msgraph-sdk-go/users"
 )
 
-func (c *microsoftGraph) MyMailBox(token Token, mailProperties ...string) MailBox {
+func (c *MicrosoftGraph) MyMailBox(token Token, mailProperties ...string) MailBox {
 	return &myMailBox{token: token, mailProperties: mailProperties}
 }
 

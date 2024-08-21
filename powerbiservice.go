@@ -12,31 +12,26 @@ import (
 )
 
 const (
-	powerBIAPIHost = "https://api.powerbi.com"
+	PowerBIAPIHost = "https://api.powerbi.com"
 )
 
-type PowerBIService interface {
-	ExchangeToken() (Token, error)
-	RefreshDatasetInGroup(ctx context.Context, token Token, groupId string, datasetId string) ([]byte, error)
-}
-
-func NewPowerBIService(conf Config) PowerBIService {
+func NewPowerBIService(conf Config) *PowerBIService {
 	oauthConf := &oauth2.Config{
 		ClientID:     conf.ClientId,
 		ClientSecret: conf.ClientSecret,
 		RedirectURL:  conf.RedirectURL,
 		Endpoint:     microsoft.AzureADEndpoint(conf.TenantId),
 		Scopes: []string{
-			defaultMicrosoftGraphScope,
+			DefaultMicrosoftGraphScope,
 		},
 	}
-	return &powerBIService{
+	return &PowerBIService{
 		conf:      conf,
 		oauthConf: oauthConf,
 	}
 }
 
-type powerBIService struct {
+type PowerBIService struct {
 	conf      Config
 	oauthConf *oauth2.Config
 }
@@ -45,7 +40,7 @@ type powerBIService struct {
 RefreshDatasetInGroup Refresh Dataset In Group
 https://learn.microsoft.com/en-us/rest/api/power-bi/datasets/refresh-dataset-in-group#code-try-0
 */
-func (c *powerBIService) RefreshDatasetInGroup(ctx context.Context, token Token, groupId string, datasetId string) ([]byte, error) {
+func (c *PowerBIService) RefreshDatasetInGroup(ctx context.Context, token Token, groupId string, datasetId string) ([]byte, error) {
 	oauth, err := token.refresh(ctx)
 	if err != nil {
 		return nil, err
@@ -54,7 +49,7 @@ func (c *powerBIService) RefreshDatasetInGroup(ctx context.Context, token Token,
 	header := http.Header{}
 	header.Set("Authorization", fmt.Sprintf("Bearer %s", oauth.AccessToken))
 
-	u := fmt.Sprintf(`%s/v1.0/myorg/groups/%s/datasets/%s/refreshes`, powerBIAPIHost, groupId, datasetId)
+	u := fmt.Sprintf(`%s/v1.0/myorg/groups/%s/datasets/%s/refreshes`, PowerBIAPIHost, groupId, datasetId)
 
 	req, err := http.NewRequest(http.MethodPost, u, nil)
 	if err != nil {
@@ -76,14 +71,14 @@ func (c *powerBIService) RefreshDatasetInGroup(ctx context.Context, token Token,
 	return body, nil
 }
 
-func (c *powerBIService) ExchangeToken() (Token, error) {
+func (c *PowerBIService) ExchangeToken() (Token, error) {
 
 	var (
 		resource = "https://analysis.windows.net/powerbi/api" // Resource URI for Power BI API
 		scope    = "https://analysis.windows.net/powerbi/api/.default"
 	)
 
-	u := fmt.Sprintf("%s%s", authHost, c.conf.TenantId) + "/oauth2/token"
+	u := fmt.Sprintf("%s%s", AuthHost, c.conf.TenantId) + "/oauth2/token"
 
 	// Create HTTP client
 	client := resty.New()

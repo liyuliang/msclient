@@ -26,7 +26,7 @@ type SharePoint interface {
 	Download(ctx context.Context, fileWebUrl string) ([]byte, error)
 }
 
-func (c *microsoftGraph) MySharePoint(token Token) SharePoint {
+func (c *MicrosoftGraph) MySharePoint(token Token) SharePoint {
 	return &mySharePoint{token: token}
 }
 
@@ -69,7 +69,7 @@ func (m mySharePoint) request(ctx context.Context, method string, url string, pa
 }
 
 func (m mySharePoint) shareDocumentId(ctx context.Context) (string, error) {
-	url := fmt.Sprintf("%s/v1.0/sites/%s/lists", graphAPIHost, SharePointSiteId)
+	url := fmt.Sprintf("%s/v1.0/sites/%s/lists", GraphAPIHost, SharePointSiteId)
 	body, err := m.request(ctx, http.MethodGet, url, nil, nil)
 	if err != nil {
 		return "", fmt.Errorf("error reading response body: %v", err)
@@ -91,7 +91,7 @@ func (m mySharePoint) List(ctx context.Context, dirId string) ([]Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf(`%s/v1.0/sites/%s/lists/%s/items`, graphAPIHost, SharePointSiteId, rootDirId)
+	url := fmt.Sprintf(`%s/v1.0/sites/%s/lists/%s/items`, GraphAPIHost, SharePointSiteId, rootDirId)
 
 	body, err := m.request(ctx, http.MethodGet, url, nil, nil)
 	if err != nil {
@@ -128,17 +128,17 @@ func (m mySharePoint) Upload(ctx context.Context, dirId string, file *os.File, f
 
 	if fileSize < SmallFileMaxSize {
 		// PUT /sites/{site-id}/drive/items/{parent-id}:/{filename}:/content
-		url := fmt.Sprintf("%s/v1.0/sites/%s/drive/items/%s:/%s:/content", graphAPIHost, SharePointSiteId, dirId, fileName)
+		url := fmt.Sprintf("%s/v1.0/sites/%s/drive/items/%s:/%s:/content", GraphAPIHost, SharePointSiteId, dirId, fileName)
 
 		return m.smallFileUpload(url, headers, file)
 	} else {
 
 		// POST /sites/{siteId}/drive/items/{itemId}/createUploadSession
-		//sessionURL := fmt.Sprintf("%s/v1.0/sites/%s/drive/items/%s/createUploadSession", graphAPIHost, SharePointSiteId, fileName)
-		//sessionURL := fmt.Sprintf("%s/v1.0/sites/%s/drives/${driveId}/items/${folderId}:/${fileName}:/createUploadSession", graphAPIHost, SharePointSiteId,root fileName)
+		//sessionURL := fmt.Sprintf("%s/v1.0/sites/%s/drive/items/%s/createUploadSession", GraphAPIHost, SharePointSiteId, fileName)
+		//sessionURL := fmt.Sprintf("%s/v1.0/sites/%s/drives/${driveId}/items/${folderId}:/${fileName}:/createUploadSession", GraphAPIHost, SharePointSiteId,root fileName)
 
 		// POST /me/drive/items/{parentItemId}:/{fileName}:/createUploadSession
-		sessionURL := fmt.Sprintf("%s/v1.0/me/drive/items/%s:/%s:/createUploadSession", graphAPIHost, dirId, fileName)
+		sessionURL := fmt.Sprintf("%s/v1.0/me/drive/items/%s:/%s:/createUploadSession", GraphAPIHost, dirId, fileName)
 
 		return m.bigFileUpload(sessionURL, headers, file, fileSize)
 	}

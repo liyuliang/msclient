@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -86,6 +87,32 @@ type Value struct {
 	ContentType ContentType `json:"contentType"`
 }
 
+// UnmarshalJSON 修改 Folder 的默认值，为 -1 时不是文件夹
+func (v *Value) UnmarshalJSON(b []byte) error {
+	type xvalue Value
+
+	xf := &xvalue{Folder: Folder{ChildCount: -1}}
+	if err := json.Unmarshal(b, xf); err != nil {
+		return err
+	}
+	*v = Value(*xf)
+	return nil
+}
+func (v *Value) NameFromUrl() string {
+	tmp := strings.Split(v.WebURL, `/`)
+	if len(tmp) == 0 {
+		return ""
+	}
+	return tmp[len(tmp)-1]
+}
+func (v *Value) RealFileId() string {
+	arr := strings.Split(v.ETag, `,`)
+	if len(arr) != 2 {
+		return ""
+	}
+	return strings.ReplaceAll(arr[0], `"`, ``)
+}
+
 type ContentType struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
@@ -101,18 +128,6 @@ type Answer struct {
 	OdataDeltaLink string  `json:"@odata.deltaLink"`
 	Value          []Value `json:"value"`
 	Error          ErrJson `json:"error,omitempty"`
-}
-
-// UnmarshalJSON 修改 Folder 的默认值，为 -1 时不是文件夹
-func (v *Value) UnmarshalJSON(b []byte) error {
-	type xvalue Value
-
-	xf := &xvalue{Folder: Folder{ChildCount: -1}}
-	if err := json.Unmarshal(b, xf); err != nil {
-		return err
-	}
-	*v = Value(*xf)
-	return nil
 }
 
 // CheckAnswerValid 判断收到的 Answer 是否正常

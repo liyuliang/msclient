@@ -303,3 +303,7 @@ func (m mySharePoint) createUploadSession(ctx context.Context, url string) ([]by
 	}
 	return body, nil
 }
+
+func FileDownloadUrl(dirId string) string {
+	return fmt.Sprintf("%s/v1.0/sites/%s/drive/items/%s/content", GraphAPIHost, SharePointSiteId, dirId)
+}

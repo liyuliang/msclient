@@ -91,23 +91,40 @@ func (m mySharePoint) List(ctx context.Context, dirId string) ([]Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf(`%s/v1.0/sites/%s/lists/%s/items`, GraphAPIHost, SharePointSiteId, rootDirId)
-
-	body, err := m.request(ctx, http.MethodGet, url, nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response body: %v", err)
-	}
-	var items Answer
-	_ = json.Unmarshal(body, &items)
 
 	var data []Value
-	for _, item := range items.Value {
-		if item.ParentReference.ID == dirId {
-			data = append(data, item)
+
+	var url = fmt.Sprintf(`%s/v1.0/sites/%s/lists/%s/items`, GraphAPIHost, SharePointSiteId, rootDirId)
+
+	for {
+		if url == "" {
+			break
 		}
+
+		items, err := m.loopSharePointList(ctx, url)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items.Value {
+			if item.ParentReference.ID == dirId {
+				data = append(data, item)
+			}
+		}
+		url = items.OdataNextLink
 	}
 
 	return data, nil
+}
+
+func (m mySharePoint) loopSharePointList(ctx context.Context, url string) (Answer, error) {
+	var items Answer
+
+	body, err := m.request(ctx, http.MethodGet, url, nil, nil)
+	if err != nil {
+		return items, fmt.Errorf("error reading response body: %v", err)
+	}
+	_ = json.Unmarshal(body, &items)
+	return items, nil
 }
 
 func (m mySharePoint) Upload(ctx context.Context, dirId string, file *os.File, fileName string, fileSize int64) (*Value, error) {
